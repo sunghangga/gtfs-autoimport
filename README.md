@@ -2,7 +2,7 @@
 ###
 Clone repository
 ```
-git clone https://sunghangga@bitbucket.org/sunghangga/gtfs-auto-import.git
+git clone https://sunghangga@bitbucket.org/maestronic/gtfs-auto-import.git
 ```
 ###
 Install Depedency using Maven. (Make sure [Maven](https://maven.apache.org/install.html) already installed on your machine before running this syntax).
