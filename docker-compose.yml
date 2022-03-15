@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+    gtfs-auto-import:
+        container_name: gtfs-auto-import
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: gtfs-auto-import:latest
+        ports:
+            - 18888:18888
+        environment:
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/gtfs_timetable
+            - SPRING_DATASOURCE_USERNAME=postgres
+            - SPRING_DATASOURCE_PASSWORD=Maestronic123
+            - IMPORT_READY_URL=http://host.docker.internal:8080/api
+            - GTFS_IMPORT_URL=http://host.docker.internal:8080/api/gtfs/import
+            - GTFS_DOWNLOAD_DIR=/tmp/GTFS/gtfs_download/
+            - CHB_IMPORT_URL=http://host.docker.internal:8080/api/chb/import
+            - CHB_DOWNLOAD_DIR=/tmp/CHB/chb_download/
+            - PSA_IMPORT_URL=http://host.docker.internal:8080/api/psa/import
+            - PSA_DOWNLOAD_DIR=/tmp/PSA/psa_download/
