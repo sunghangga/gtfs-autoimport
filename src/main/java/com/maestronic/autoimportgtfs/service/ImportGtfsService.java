@@ -63,40 +63,34 @@ public class ImportGtfsService implements GlobalVariable {
     public Dataset getNewGtfsDataset() {
         try {
             Document document = Jsoup.connect(gtfsSourceUrl).get();
-            Element element = document.getElementById("dirlist");
-            Elements elements = element.getElementsByTag("tbody").select("tr");
+            Elements elements = document.getElementsByTag("tbody").select("tr").get(0).getElementsByTag("a");
+            Element link = elements.get(elements.size() - 1);
 
-            for (Element e : elements) {
-                Element link = e.getElementsByClass("link").get(0);
-                // If filename equal with gtfs-nl.zip
-                if (link.text().equals(GTFS_DEFAULT_NAME)) {
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
-                    Date parsedDate = dateFormat.parse(e.getElementsByClass("date").text());
-                    LocalDateTime releaseDateTime = parsedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            // Get release date
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy");
+            Date parsedDate = dateFormat.parse(elements.get(0).text());
+            LocalDateTime releaseDateTime = parsedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
-                    List<Import> importList = importRepository.findImportDataByFileType(GTFS_FILE_TYPE,
-                            PageRequest.of(0,1));
-                    // Check if import data exists
-                    if (importList.size() == 0) {
-                        Logger.info("New GTFS dataset found!");
-                        return new Dataset(link.text(), link.absUrl("href"), releaseDateTime);
-                    }
-                    // Check if release date is null
-                    // Check the date from website is latter than the last import or import status is failed
-                    if (importList.get(0).getReleaseDate() == null || (importList.get(0).getReleaseDate()
-                            .isBefore(releaseDateTime) || importList.get(0).getStatus().equals(IMPORT_STATUS_FAILED))) {
-                        Logger.info("New GTFS dataset found!");
-                        // Check if last import status is in progress then skip
-                        if (importList.get(0).getStatus().equals(IMPORT_STATUS_IN_PROGRESS)) {
-                            Logger.error("There is an GTFS import process still in progress!");
-                            break;
-                        }
-                        return new Dataset(link.text(), link.absUrl("href"), releaseDateTime);
-                    } else {
-                        Logger.info("New GTFS dataset not found!");
-                        break;
-                    }
+            // Get last import
+            List<Import> importList = importRepository.findImportDataByFileType(GTFS_FILE_TYPE,
+                    PageRequest.of(0,1));
+            // Check if import data exists
+            if (importList.size() == 0) {
+                Logger.info("New GTFS dataset found!");
+                return new Dataset(GTFS_DEFAULT_NAME, link.absUrl("href"), releaseDateTime);
+            }
+            // Check if release date is null
+            // Check the date from website is latter than the last import or import status is failed
+            if (importList.get(0).getReleaseDate() == null || (importList.get(0).getReleaseDate()
+                    .isBefore(releaseDateTime) || importList.get(0).getStatus().equals(IMPORT_STATUS_FAILED))) {
+                Logger.info("New GTFS dataset found!");
+                // Check if last import status is in progress then skip
+                if (importList.get(0).getStatus().equals(IMPORT_STATUS_IN_PROGRESS)) {
+                    Logger.error("There is an GTFS import process still in progress!");
                 }
+                return new Dataset(GTFS_DEFAULT_NAME, link.absUrl("href"), releaseDateTime);
+            } else {
+                Logger.info("New GTFS dataset not found!");
             }
         } catch (Exception e) {
             String logMessage = "Error while checking for new GTFS dataset: " + e.getMessage();

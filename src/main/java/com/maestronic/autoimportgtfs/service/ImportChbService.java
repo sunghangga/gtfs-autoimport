@@ -72,6 +72,7 @@ public class ImportChbService implements GlobalVariable {
 
             List<Import> importList = importRepository.findImportDataByFileType(CHB_FILE_TYPE,
                     PageRequest.of(0,1));
+
             // Check if import data exists
             if (importList.size() == 0) {
                 Logger.info("New CHB dataset found!");

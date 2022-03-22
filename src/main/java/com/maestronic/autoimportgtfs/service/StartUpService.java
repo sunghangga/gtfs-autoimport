@@ -27,35 +27,35 @@ public class StartUpService {
     @Value("${import.ready.url}")
     private String checkImportUrl;
 
-    /**
-     * Start the import of the CHB data.
-     */
-    @EventListener(ApplicationReadyEvent.class)
-    @Scheduled(cron = "${cron.expression.auto-import-schedule}")
-    public void startAutoImportChb() {
-        // Check if the chb import is already started
-        if (!isChbStarted) {
-            isChbStarted = true;
-            this.checkApiReady();
-            importChbService.runAutoImport();
-            isChbStarted = false;
-        }
-    }
-
-    /**
-     * Start the import of the PSA data.
-     */
-    @EventListener(ApplicationReadyEvent.class)
-    @Scheduled(cron = "${cron.expression.auto-import-schedule}")
-    public void startAutoImportPsa() {
-        // Check if the psa import is already started
-        if (!isPsaStarted) {
-            isPsaStarted = true;
-            this.checkApiReady();
-            importPsaService.runAutoImport();
-            isPsaStarted = false;
-        }
-    }
+//    /**
+//     * Start the import of the CHB data.
+//     */
+//    @EventListener(ApplicationReadyEvent.class)
+//    @Scheduled(cron = "${cron.expression.auto-import-schedule}")
+//    public void startAutoImportChb() {
+//        // Check if the chb import is already started
+//        if (!isChbStarted) {
+//            isChbStarted = true;
+//            this.checkApiReady();
+//            importChbService.runAutoImport();
+//            isChbStarted = false;
+//        }
+//    }
+//
+//    /**
+//     * Start the import of the PSA data.
+//     */
+//    @EventListener(ApplicationReadyEvent.class)
+//    @Scheduled(cron = "${cron.expression.auto-import-schedule}")
+//    public void startAutoImportPsa() {
+//        // Check if the psa import is already started
+//        if (!isPsaStarted) {
+//            isPsaStarted = true;
+//            this.checkApiReady();
+//            importPsaService.runAutoImport();
+//            isPsaStarted = false;
+//        }
+//    }
 
     /**
      * Start the import of the GTFS data.
