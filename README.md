@@ -22,7 +22,9 @@ Setup docker on your machine
 ###
 Setting Dockerfile or docker-compose.yml based on your project
 ###
-Run docker compose
+Start gtfs-app docker application before start auto import application
+###
+Run auto import application using docker compose
 ```
-docker compose up --build -d
+docker-compose --env-file .via.env up --build -d
 ```

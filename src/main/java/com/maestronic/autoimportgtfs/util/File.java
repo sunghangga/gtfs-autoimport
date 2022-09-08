@@ -9,6 +9,7 @@ public class File {
             if (files != null) {
                 for (String file : files) {
                     if(new java.io.File(folder.getPath(), file).delete()) Logger.info("File '" + file + "' deleted");
+                    else Logger.info("File '" + file + "' cannot delete");
                 }
             }
         }

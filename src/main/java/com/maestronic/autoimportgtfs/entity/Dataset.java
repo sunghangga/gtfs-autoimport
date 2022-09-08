@@ -32,4 +32,8 @@ public class Dataset {
     public LocalDateTime getReleaseDate() {
         return releaseDate;
     }
+
+    public void setReleaseDate(LocalDateTime releaseDate) {
+        this.releaseDate = releaseDate;
+    }
 }

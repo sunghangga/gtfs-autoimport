@@ -16,16 +16,22 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 @Service
 public class ImportGtfsService implements GlobalVariable {
@@ -40,6 +46,28 @@ public class ImportGtfsService implements GlobalVariable {
     private String importGtfsUrl;
 
     public void runAutoImport() {
+        try {
+            Dataset dataset = new Dataset(GTFS_DEFAULT_NAME, gtfsSourceUrl);
+
+            // Download dataset from URL
+            Logger.info("Downloading GTFS datasets...");
+            String filePath = this.downloadFileFromUrl(dataset);
+
+            // Check attribute of GTFS file
+            LocalDateTime newCreationTime = this.checkNewGtfsVersion(filePath);
+            dataset.setReleaseDate(newCreationTime);
+
+            // If filePath is not null then import it
+            if (newCreationTime != null) {
+                Logger.info("Importing new GTFS datasets...");
+                this.importDataset(filePath, dataset);
+            }
+        } catch (Exception e) {
+            Logger.error(e.getMessage());
+        }
+    }
+
+    public void runAutoImportScrapping() {
         try {
             String filePath = null;
             // Check if new dataset exists
@@ -60,6 +88,68 @@ public class ImportGtfsService implements GlobalVariable {
         }
     }
 
+    private LocalDateTime getNewestCreationTime(String filePath) {
+
+        try {
+            FileTime creationTime = null;
+            ZipFile zip = new ZipFile(filePath);
+            for (Enumeration e = zip.entries(); e.hasMoreElements(); ) {
+                ZipEntry entry = (ZipEntry) e.nextElement();
+                if (!entry.isDirectory()) {
+                    FileTime creationTimeNext = entry.getCreationTime();
+                    if (creationTime == null) {
+                        creationTime = creationTimeNext;
+                        continue;
+                    }
+                    if (creationTime.compareTo(creationTimeNext) < 0) {
+                        creationTime = creationTimeNext;
+                    }
+                }
+            }
+            zip.close();
+            return LocalDateTime.parse(LocalDateTime.ofInstant(creationTime.toInstant(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private LocalDateTime checkNewGtfsVersion(String filePath) {
+        String logMessage;
+        try {
+            // Check validation of each file
+            LocalDateTime newestCreationTime = getNewestCreationTime(filePath);
+
+            // Compare the newest creation time with released date time on database
+            // Get last import
+            List<Import> importList = importRepository.findImportDataByFileType(GTFS_FILE_TYPE,
+                    PageRequest.of(0,1));
+            // Check if import data exists
+            if (importList.size() == 0) {
+                Logger.info("New GTFS dataset found!");
+                return newestCreationTime;
+            }
+            // Check if release date is null
+            // Check the date from website is latter than the last import or import status is failed
+            if (importList.get(0).getReleaseDate() == null || (importList.get(0).getReleaseDate()
+                    .isBefore(newestCreationTime) || importList.get(0).getStatus().equals(IMPORT_STATUS_FAILED))) {
+                Logger.info("New GTFS dataset found!");
+                // Check if last import status is in progress then skip
+                if (importList.get(0).getStatus().equals(IMPORT_STATUS_IN_PROGRESS)) {
+                    Logger.error("There is an GTFS import process still in progress!");
+                    return null;
+                }
+                return newestCreationTime;
+            } else {
+                Logger.info("New GTFS dataset not found!");
+            }
+        } catch (Exception e) {
+            logMessage = "Check GTFS version failed. " + e.getMessage();
+            Logger.error(logMessage);
+            throw new RuntimeException(logMessage);
+        }
+        return null;
+    }
+
     public Dataset getNewGtfsDataset() {
         try {
             Document document = Jsoup.connect(gtfsSourceUrl).get();
@@ -69,7 +159,7 @@ public class ImportGtfsService implements GlobalVariable {
             // Get release date
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy");
             Date parsedDate = dateFormat.parse(elements.get(0).text());
-            LocalDateTime releaseDateTime = parsedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            LocalDateTime releaseDateTime = LocalDateTime.parse(LocalDateTime.ofInstant(parsedDate.toInstant(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")));
 
             // Get last import
             List<Import> importList = importRepository.findImportDataByFileType(GTFS_FILE_TYPE,
@@ -87,6 +177,7 @@ public class ImportGtfsService implements GlobalVariable {
                 // Check if last import status is in progress then skip
                 if (importList.get(0).getStatus().equals(IMPORT_STATUS_IN_PROGRESS)) {
                     Logger.error("There is an GTFS import process still in progress!");
+                    return null;
                 }
                 return new Dataset(GTFS_DEFAULT_NAME, link.absUrl("href"), releaseDateTime);
             } else {
@@ -99,7 +190,7 @@ public class ImportGtfsService implements GlobalVariable {
         return null;
     }
 
-    public String downloadFileFromUrl(Dataset dataset) {
+    private String downloadFileFromUrl(Dataset dataset) {
         try {
             Path pathDir = Paths.get(downloadDir);
             Path filePath = Paths.get(downloadDir, dataset.getFileName());
@@ -110,8 +201,10 @@ public class ImportGtfsService implements GlobalVariable {
             // Delete all file in dir
             new File().clearUploadDirectory(pathDir.toString());
             // Download file from url
-            URL fileUrl = new URL(dataset.getDownloadUrl());
-            try (InputStream in = fileUrl.openStream()) {
+            HttpURLConnection httpConnect = (HttpURLConnection) new URL(dataset.getDownloadUrl()).openConnection();
+            httpConnect.addRequestProperty("User-Agent", "Mozilla");
+
+            try (InputStream in = httpConnect.getInputStream()) {
                 Files.copy(in, filePath);
             }
             return filePath.toString();
@@ -121,7 +214,7 @@ public class ImportGtfsService implements GlobalVariable {
         }
     }
 
-    public void importDataset(String filePath, Dataset dataset) {
+    private void importDataset(String filePath, Dataset dataset) {
 
         Response response = null;
         try {
@@ -138,7 +231,7 @@ public class ImportGtfsService implements GlobalVariable {
             if (response.code() == 200) {
                 Logger.info("Import GTFS dataset has send to API!");
             } else {
-                Logger.error("Import GTFS dataset failed!");
+                Logger.error("Import GTFS dataset failed! " + response);
             }
         } catch (Exception e) {
             String logMessage = "Error while importing GTFS dataset: " + e.getMessage();

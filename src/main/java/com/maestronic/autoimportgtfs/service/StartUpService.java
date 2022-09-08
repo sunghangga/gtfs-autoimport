@@ -1,5 +1,6 @@
 package com.maestronic.autoimportgtfs.service;
 
+import com.maestronic.autoimportgtfs.util.Logger;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -59,6 +60,10 @@ public class StartUpService {
 
     /**
      * Start the import of the GTFS data.
+     * To use scrapping method from transitfeed, please uncomment "importGtfsService.runAutoImportScrapping()" and
+     *      comment "importGtfsService.runAutoImport()"
+     * To use URL direct to zip file, please uncomment "importGtfsService.runAutoImport()" and
+     *      comment "importGtfsService.runAutoImportScrapping()"
      */
     @EventListener(ApplicationReadyEvent.class)
     @Scheduled(cron = "${cron.expression.auto-import-schedule}")
@@ -67,7 +72,13 @@ public class StartUpService {
         if (!isGtfsStarted) {
             isGtfsStarted = true;
             this.checkApiReady();
+
+            // For auto import with transitfeed website (use scrapping)
+//            importGtfsService.runAutoImportScrapping();
+
+            // Use for auto import direct to zip file
             importGtfsService.runAutoImport();
+
             isGtfsStarted = false;
         }
     }
@@ -85,7 +96,7 @@ public class StartUpService {
                     Thread.sleep(10000);
                 }
             } catch (IOException | InterruptedException e) {
-                // Logger.error("Error while connecting to API! " + e.getMessage());
+                 Logger.error("Error while connecting to API! " + e.getMessage());
             } finally {
                 if (response != null) response.close();
             }

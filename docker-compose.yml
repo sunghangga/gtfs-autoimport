@@ -2,21 +2,33 @@ version: '3'
 
 services:
     gtfs-auto-import:
-        container_name: gtfs-auto-import
+        image: gtfs-auto-import:latest
+        container_name: gtfs-auto-import-${OPERATOR}
         build:
             context: .
             dockerfile: Dockerfile
-        image: gtfs-auto-import:latest
         ports:
-            - 18888:18888
+            - 4003:4003
+        restart: on-failure
+        networks:
+            - gtfs-network
         environment:
-            - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/gtfs_timetable
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://gtfs-postgres:5432/gtfs_${OPERATOR}
             - SPRING_DATASOURCE_USERNAME=postgres
-            - SPRING_DATASOURCE_PASSWORD=Maestronic123
-            - IMPORT_READY_URL=http://host.docker.internal:8080/api
-            - GTFS_IMPORT_URL=http://host.docker.internal:8080/api/gtfs/import
-            - GTFS_DOWNLOAD_DIR=/tmp/GTFS/gtfs_download/
-            - CHB_IMPORT_URL=http://host.docker.internal:8080/api/chb/import
-            - CHB_DOWNLOAD_DIR=/tmp/CHB/chb_download/
-            - PSA_IMPORT_URL=http://host.docker.internal:8080/api/psa/import
-            - PSA_DOWNLOAD_DIR=/tmp/PSA/psa_download/
+            - SPRING_DATASOURCE_PASSWORD=3gXdM!!X9aG49yBN3
+            - IMPORT_READY_URL=http://gtfs-app:${PORT_STATIC}/api
+            - GTFS_SOURCE_URL=${GTFS_SOURCE_URL}
+            - GTFS_IMPORT_URL=http://gtfs-app:${PORT_STATIC}/api/gtfs/import
+            - GTFS_DOWNLOAD_DIR=${GTFS_DOWNLOAD_DIR}
+            - CHB_SOURCE_URL=${CHB_SOURCE_URL}
+            - CHB_IMPORT_URL=http://gtfs-app:${PORT_STATIC}/api/chb/import
+            - CHB_DOWNLOAD_DIR=${CHB_DOWNLOAD_DIR}
+            - PSA_SOURCE_URL=${PSA_SOURCE_URL}
+            - PSA_IMPORT_URL=http://gtfs-app:${PORT_STATIC}/api/psa/import
+            - PSA_DOWNLOAD_DIR=${PSA_DOWNLOAD_DIR}
+            - CRON_EXPRESSION_AUTO_IMPORT_SCHEDULE=${CRON_EXPRESSION_AUTO_IMPORT_SCHEDULE}
+
+networks:
+    gtfs-network:
+        external: true
+        name: gtfs-network
