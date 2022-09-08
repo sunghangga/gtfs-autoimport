@@ -1,5 +1,6 @@
 package com.maestronic.autoimportgtfs.service;
 
+import com.maestronic.autoimportgtfs.util.GlobalVariable;
 import com.maestronic.autoimportgtfs.util.Logger;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -27,6 +28,8 @@ public class StartUpService {
     private boolean isPsaStarted = false;
     @Value("${import.ready.url}")
     private String checkImportUrl;
+    @Value("${import.mode}")
+    private String importMode;
 
 //    /**
 //     * Start the import of the CHB data.
@@ -73,11 +76,13 @@ public class StartUpService {
             isGtfsStarted = true;
             this.checkApiReady();
 
-            // For auto import with transitfeed website (use scrapping)
-//            importGtfsService.runAutoImportScrapping();
-
-            // Use for auto import direct to zip file
-            importGtfsService.runAutoImport();
+            if (importMode.equals(GlobalVariable.IMPORT_MODE)) {
+                // For auto import with transitfeed website (use scrapping)
+                importGtfsService.runAutoImportScrapping();
+            } else {
+                // Use for auto import direct to zip file
+                importGtfsService.runAutoImport();
+            }
 
             isGtfsStarted = false;
         }

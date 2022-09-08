@@ -27,6 +27,7 @@ services:
             - PSA_IMPORT_URL=http://gtfs-app:${PORT_STATIC}/api/psa/import
             - PSA_DOWNLOAD_DIR=${PSA_DOWNLOAD_DIR}
             - CRON_EXPRESSION_AUTO_IMPORT_SCHEDULE=${CRON_EXPRESSION_AUTO_IMPORT_SCHEDULE}
+            - IMPORT_MODE=${IMPORT_MODE}
 
 networks:
     gtfs-network:

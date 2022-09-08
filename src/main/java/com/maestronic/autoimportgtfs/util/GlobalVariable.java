@@ -11,4 +11,5 @@ public interface GlobalVariable {
     String CHB_FILE_TYPE = "CHB";
     // CHB variable
     String PSA_FILE_TYPE = "PSA";
+    String IMPORT_MODE = "scrapping";
 }
