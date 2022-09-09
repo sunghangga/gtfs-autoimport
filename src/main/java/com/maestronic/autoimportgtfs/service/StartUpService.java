@@ -1,5 +1,6 @@
 package com.maestronic.autoimportgtfs.service;
 
+import com.maestronic.autoimportgtfs.dto.ReportDto;
 import com.maestronic.autoimportgtfs.util.GlobalVariable;
 import com.maestronic.autoimportgtfs.util.Logger;
 import okhttp3.OkHttpClient;
@@ -13,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 @Component
 public class StartUpService {
@@ -63,10 +65,6 @@ public class StartUpService {
 
     /**
      * Start the import of the GTFS data.
-     * To use scrapping method from transitfeed, please uncomment "importGtfsService.runAutoImportScrapping()" and
-     *      comment "importGtfsService.runAutoImport()"
-     * To use URL direct to zip file, please uncomment "importGtfsService.runAutoImport()" and
-     *      comment "importGtfsService.runAutoImportScrapping()"
      */
     @EventListener(ApplicationReadyEvent.class)
     @Scheduled(cron = "${cron.expression.auto-import-schedule}")
@@ -76,13 +74,21 @@ public class StartUpService {
             isGtfsStarted = true;
             this.checkApiReady();
 
-            if (importMode.equals(GlobalVariable.IMPORT_MODE)) {
+            // Initialize Report
+            ReportDto reportDto = new ReportDto();
+            reportDto.setJobRunTime(LocalDateTime.now());
+            reportDto.setStatus(GlobalVariable.GTFS_CURRENT);
+
+            if (importMode.equals(GlobalVariable.IMPORT_MODE_SCRAPPING)) {
                 // For auto import with transitfeed website (use scrapping)
-                importGtfsService.runAutoImportScrapping();
+                reportDto = importGtfsService.runAutoImportScrapping(reportDto);
             } else {
                 // Use for auto import direct to zip file
-                importGtfsService.runAutoImport();
+                reportDto = importGtfsService.runAutoImport(reportDto);
             }
+
+            // Send report to webhook
+            importGtfsService.sendReport(reportDto);
 
             isGtfsStarted = false;
         }

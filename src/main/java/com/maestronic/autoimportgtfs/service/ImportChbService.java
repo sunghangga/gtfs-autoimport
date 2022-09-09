@@ -1,6 +1,6 @@
 package com.maestronic.autoimportgtfs.service;
 
-import com.maestronic.autoimportgtfs.entity.Dataset;
+import com.maestronic.autoimportgtfs.dto.DatasetDto;
 import com.maestronic.autoimportgtfs.entity.Import;
 import com.maestronic.autoimportgtfs.repository.ImportRepository;
 import com.maestronic.autoimportgtfs.util.File;
@@ -41,25 +41,25 @@ public class ImportChbService implements GlobalVariable {
     public void runAutoImport() {
         try {
             String filePath = null;
-            // Check if new dataset exists
+            // Check if new datasetDto exists
             Logger.info("Checking for new CHB datasets...");
-            Dataset dataset = this.getNewChbDataset();
+            DatasetDto datasetDto = this.getNewChbDataset();
             // If file exists then download it
-            if (dataset != null) {
+            if (datasetDto != null) {
                 Logger.info("Downloading new CHB datasets...");
-                filePath = this.downloadFileFromUrl(dataset);
+                filePath = this.downloadFileFromUrl(datasetDto);
             }
             // If filePath is not null then import it
             if (filePath != null) {
                 Logger.info("Importing new CHB datasets...");
-                this.importDataset(filePath, dataset);
+                this.importDataset(filePath, datasetDto);
             }
         } catch (Exception e) {
             Logger.error(e.getMessage());
         }
     }
 
-    public Dataset getNewChbDataset() {
+    public DatasetDto getNewChbDataset() {
         try {
             Document document = Jsoup.connect(chbSourceUrl).get();
             Element element = document.getElementsByTag("tbody").select("tr").get(1);
@@ -76,7 +76,7 @@ public class ImportChbService implements GlobalVariable {
             // Check if import data exists
             if (importList.size() == 0) {
                 Logger.info("New CHB dataset found!");
-                return new Dataset(link.text(), link.absUrl("href"), releaseDateTime);
+                return new DatasetDto(link.text(), link.absUrl("href"), releaseDateTime);
             }
 
             // If filename not exists
@@ -87,7 +87,7 @@ public class ImportChbService implements GlobalVariable {
                     Logger.error("There is an CHB import process still in progress!");
                     return null;
                 }
-                return new Dataset(link.text(), link.absUrl("href"), releaseDateTime);
+                return new DatasetDto(link.text(), link.absUrl("href"), releaseDateTime);
             } else {
                 Logger.info("New CHB dataset not found!");
             }
@@ -98,10 +98,10 @@ public class ImportChbService implements GlobalVariable {
         return null;
     }
 
-    public String downloadFileFromUrl(Dataset dataset) {
+    public String downloadFileFromUrl(DatasetDto datasetDto) {
         try {
             Path pathDir = Paths.get(downloadDir);
-            Path filePath = Paths.get(downloadDir, dataset.getFileName());
+            Path filePath = Paths.get(downloadDir, datasetDto.getFileName());
             // Create path destination download file if not exists
             if (!Files.exists(pathDir)) {
                 Files.createDirectories(pathDir);
@@ -109,7 +109,7 @@ public class ImportChbService implements GlobalVariable {
             // Delete all file in dir
             new File().clearUploadDirectory(pathDir.toString());
             // Download file from url
-            URL fileUrl = new URL(dataset.getDownloadUrl());
+            URL fileUrl = new URL(datasetDto.getDownloadUrl());
             try (InputStream in = fileUrl.openStream()) {
                 Files.copy(in, filePath);
             }
@@ -120,27 +120,27 @@ public class ImportChbService implements GlobalVariable {
         }
     }
 
-    public void importDataset(String filePath, Dataset dataset) {
+    public void importDataset(String filePath, DatasetDto datasetDto) {
 
         Response response = null;
         try {
             // Create request to import data
             RequestBody requestBody = new MultipartBody.Builder()
-                    .addFormDataPart("release_date", dataset.getReleaseDate().toString())
-                    .addFormDataPart("task_name", "Auto-import " + dataset.getFileName()).setType(MultipartBody.FORM)
-                    .addFormDataPart("file", dataset.getFileName(), RequestBody.create(new java.io.File(filePath), MediaType.parse("application/zip")))
+                    .addFormDataPart("release_date", datasetDto.getReleaseDate().toString())
+                    .addFormDataPart("task_name", "Auto-import " + datasetDto.getFileName()).setType(MultipartBody.FORM)
+                    .addFormDataPart("file", datasetDto.getFileName(), RequestBody.create(new java.io.File(filePath), MediaType.parse("application/zip")))
                     .build();
             Request postRequest = new Request.Builder().url(importChbUrl).post(requestBody).build();
             response = new OkHttpClient().newCall(postRequest).execute();
 
             // Check if import data success
             if (response.code() == 200) {
-                Logger.info("Import CHB dataset has send to API!");
+                Logger.info("Import CHB datasetDto has send to API!");
             } else {
-                Logger.error("Import CHB dataset failed!");
+                Logger.error("Import CHB datasetDto failed!");
             }
         } catch (Exception e) {
-            String logMessage = "Error while importing CHB dataset: " + e.getMessage();
+            String logMessage = "Error while importing CHB datasetDto: " + e.getMessage();
             throw new RuntimeException(logMessage);
         } finally {
             if (response != null) response.close();

@@ -28,6 +28,7 @@ services:
             - PSA_DOWNLOAD_DIR=${PSA_DOWNLOAD_DIR}
             - CRON_EXPRESSION_AUTO_IMPORT_SCHEDULE=${CRON_EXPRESSION_AUTO_IMPORT_SCHEDULE}
             - IMPORT_MODE=${IMPORT_MODE}
+            - WEBHOOK_URL=${WEBHOOK_URL}
 
 networks:
     gtfs-network:

@@ -2,6 +2,7 @@ package com.maestronic.autoimportgtfs.util;
 
 public interface GlobalVariable {
 
+    // Import status
     String IMPORT_STATUS_IN_PROGRESS = "IN PROGRESS";
     String IMPORT_STATUS_FAILED = "FAILED";
     // GTFS variable
@@ -11,5 +12,8 @@ public interface GlobalVariable {
     String CHB_FILE_TYPE = "CHB";
     // CHB variable
     String PSA_FILE_TYPE = "PSA";
-    String IMPORT_MODE = "scrapping";
+    String IMPORT_MODE_SCRAPPING = "scrapping";
+    // Report status
+    String GTFS_NEW_DATA = "NEW";
+    String GTFS_CURRENT = "CURRENT";
 }
