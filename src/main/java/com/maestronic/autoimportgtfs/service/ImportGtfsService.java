@@ -55,7 +55,7 @@ public class ImportGtfsService implements GlobalVariable {
             fileDetails = new ArrayList<>();
             report = reportDto;
 
-            // Download datasetDto from URL
+            // Download dataset from URL
             Logger.info("Downloading GTFS datasets...");
             String filePath = this.downloadFileFromUrl(datasetDto);
 
@@ -83,7 +83,7 @@ public class ImportGtfsService implements GlobalVariable {
             String filePath = null;
             report = reportDto;
 
-            // Check if new datasetDto exists
+            // Check if new dataset exists
             Logger.info("Checking for new GTFS datasets...");
             DatasetDto datasetDto = this.getNewGtfsDataset();
             // If gtfs file exists then download it
@@ -252,13 +252,13 @@ public class ImportGtfsService implements GlobalVariable {
 
             // Check if import data success
             if (response.code() == 200) {
-                Logger.info("Import GTFS datasetDto has send to API!");
+                Logger.info("Import GTFS dataset has send to API!");
                 report.setStatus(GlobalVariable.GTFS_NEW_DATA);
             } else {
-                Logger.error("Import GTFS datasetDto failed! " + response);
+                Logger.error("Import GTFS dataset failed! " + response);
             }
         } catch (Exception e) {
-            String logMessage = "Error while importing GTFS datasetDto: " + e.getMessage();
+            String logMessage = "Error while importing GTFS dataset: " + e.getMessage();
             throw new RuntimeException(logMessage);
         } finally {
             if (response != null) response.close();

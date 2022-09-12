@@ -135,12 +135,12 @@ public class ImportChbService implements GlobalVariable {
 
             // Check if import data success
             if (response.code() == 200) {
-                Logger.info("Import CHB datasetDto has send to API!");
+                Logger.info("Import CHB dataset has send to API!");
             } else {
-                Logger.error("Import CHB datasetDto failed!");
+                Logger.error("Import CHB dataset failed!");
             }
         } catch (Exception e) {
-            String logMessage = "Error while importing CHB datasetDto: " + e.getMessage();
+            String logMessage = "Error while importing CHB dataset: " + e.getMessage();
             throw new RuntimeException(logMessage);
         } finally {
             if (response != null) response.close();

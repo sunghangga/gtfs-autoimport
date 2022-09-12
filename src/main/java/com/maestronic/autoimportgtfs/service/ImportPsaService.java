@@ -41,7 +41,7 @@ public class ImportPsaService implements GlobalVariable {
     public void runAutoImport() {
         try {
             String filePath = null;
-            // Check if new datasetDto exists
+            // Check if new dataset exists
             Logger.info("Checking for new PSA datasets...");
             DatasetDto datasetDto = this.getNewPsaDataset();
             // If file exists then download it
@@ -134,12 +134,12 @@ public class ImportPsaService implements GlobalVariable {
 
             // Check if import data success
             if (response.code() == 200) {
-                Logger.info("Import PSA datasetDto has send to API!");
+                Logger.info("Import PSA dataset has send to API!");
             } else {
-                Logger.error("Import PSA datasetDto failed!");
+                Logger.error("Import PSA dataset failed!");
             }
         } catch (Exception e) {
-            String logMessage = "Error while importing PSA datasetDto: " + e.getMessage();
+            String logMessage = "Error while importing PSA dataset: " + e.getMessage();
             throw new RuntimeException(logMessage);
         } finally {
             if (response != null) response.close();
